@@ -68,7 +68,6 @@
 
 <script>
 import { mapMutations } from 'vuex'
-import {RequestLoginClub} from '../../api/login/login.js'
 
 export default {
   data() {
@@ -98,38 +97,47 @@ export default {
       this.loading = true
       this.message = ''
       
-	  
-	  RequestLoginClub(this.username,this.password).then((res)=>{
-		  if (res.data.code === 200) {
-		    // 登录成功
-		    const userInfo = res.data.data
-		    
-		    // 保存用户信息
-		    this.setUserInfo(userInfo)
-		    uni.setStorageSync('userInfo', userInfo)
-		    
-		    // 跳转到首页
-		    uni.switchTab({
-		      url: '/pages/index/index',
-		      success: () => {
-		        uni.showToast({
-		          title: '登录成功',
-		          icon: 'success'
-		        })
-		      }
-		    })
-		  } else {
-		    // 登录失败
-		    this.showError(res.data.msg || '用户名或密码错误')
-		  }
-	  }).catch((err)=>{
-		  // 请求失败
-		  this.showError('网络请求失败，请稍后重试')
-		  console.error('登录请求失败:', err)
-	  }).finally(()=>{
-		  // 隐藏加载状态
-		  this.loading = false
-	  })
+      uni.request({
+        url: 'http://localhost:8080/happy/login',
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        data: `username=${encodeURIComponent(this.username)}&password=${encodeURIComponent(this.password)}`,
+        success: (res) => {
+          if (res.data.code === 200) {
+            // 登录成功
+            const userInfo = res.data.data
+            
+            // 保存用户信息
+            this.setUserInfo(userInfo)
+            uni.setStorageSync('userInfo', userInfo)
+            
+            // 跳转到首页
+            uni.switchTab({
+              url: '/pages/index/index',
+              success: () => {
+                uni.showToast({
+                  title: '登录成功',
+                  icon: 'success'
+                })
+              }
+            })
+          } else {
+            // 登录失败
+            this.showError(res.data.msg || '用户名或密码错误')
+          }
+        },
+        fail: (err) => {
+          // 请求失败
+          this.showError('网络请求失败，请稍后重试')
+          console.error('登录请求失败:', err)
+        },
+        complete: () => {
+          // 隐藏加载状态
+          this.loading = false
+        }
+      })
     },
     
     showError(msg) {

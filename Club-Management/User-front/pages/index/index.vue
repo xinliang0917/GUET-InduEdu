@@ -63,7 +63,7 @@
     
     <!-- 空状态 -->
     <view v-if="!loading && filteredClubs.length === 0" class="empty-container">
-      <image src="/static/empty.png" class="empty-image" />
+      <image src="/static/default-club.png" class="empty-image" />
       <text class="empty-text">暂无社团数据</text>
     </view>
   </view>
@@ -71,8 +71,7 @@
 
 <script>
 import {baseUrl} from '../../api/request.js'
-import {RequestClubCateGoryList,RequestClubList} from '../../api/index/index.js'
-	
+
 export default {
   data() {
     return {
@@ -110,37 +109,43 @@ export default {
   },
   methods: {
     // 加载数据
-    async loadData() {
+    loadData() {
       this.loading = true;
-	  let categoriesRes = {}
-	  let clubsRes = {}
-		try {
-		  await RequestClubCateGoryList().then((res)=>{
-			categoriesRes = res  
-			console.log(categoriesRes)
-		  })
-		  await RequestClubList().then((res)=>{
-			clubsRes = res
-		  })
-        if (categoriesRes.data.code === 200) {
-          this.categories = categoriesRes.data.data;
-          // 添加"全部"分类
-          this.categories.unshift({ categoryId: null, name: '全部' });
-          this.activeCategory = this.categories[0].categoryId;
+      
+      // 加载分类列表
+      uni.request({
+        url: 'http://localhost:8080/happy/category/list',
+        method: 'GET',
+        success: (categoriesRes) => {
+          if (categoriesRes.data.code === 200) {
+            this.categories = categoriesRes.data.data;
+            // 添加"全部"分类
+            this.categories.unshift({ categoryId: null, name: '全部' });
+            this.activeCategory = this.categories[0].categoryId;
+          }
         }
-
-        if (clubsRes.data.code === 200) {
-          this.clubs = clubsRes.data.data;
+      });
+      
+      // 加载社团列表
+      uni.request({
+        url: 'http://localhost:8080/happy/club/list',
+        method: 'GET',
+        success: (clubsRes) => {
+          if (clubsRes.data.code === 200) {
+            this.clubs = clubsRes.data.data;
+          }
+        },
+        fail: (error) => {
+          console.error('加载数据失败:', error);
+          uni.showToast({
+            title: '加载失败',
+            icon: 'none'
+          });
+        },
+        complete: () => {
+          this.loading = false;
         }
-      } catch (error) {
-        console.error('加载数据失败:', error);
-        uni.showToast({
-          title: '加载失败',
-          icon: 'none'
-        });
-      } finally {
-        this.loading = false;
-      }
+      });
     },
 
     // 切换分类

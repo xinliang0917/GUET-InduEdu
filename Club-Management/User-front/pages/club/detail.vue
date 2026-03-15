@@ -149,7 +149,6 @@
 
 <script>
 import { mapState } from 'vuex';
-import {RequestClubDetail,RequestCheckMembership,RequestJoinClub,RequestQuitClub} from '../../api/club/detail.js'
 
 export default {
   data() {
@@ -182,42 +181,57 @@ export default {
       this.loading = true;
       this.errorMessage = '';
       
-	  RequestClubDetail(this.clubId).then((res)=>{
-		if (res.data.code === 200) {
-		  this.clubDetail = res.data.data;
-		} else {
-		  this.errorMessage = res.data.msg || '获取社团详情失败';
-		  uni.showToast({
-		    title: this.errorMessage,
-		    icon: 'none'
-		  });
-		}  
-	  }).catch((err)=>{
-		console.error('获取社团详情失败:', err);
-		this.errorMessage = '网络请求失败，请检查网络连接';
-		uni.showToast({
-		  title: this.errorMessage,
-		  icon: 'none'
-		});  
-	  }).finally(()=>{
-		this.loading = false;  
-	  })
+      uni.request({
+        url: `http://localhost:8080/happy/clubs/detail/${this.clubId}`,
+        method: 'GET',
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.clubDetail = res.data.data;
+          } else {
+            this.errorMessage = res.data.msg || '获取社团详情失败';
+            uni.showToast({
+              title: this.errorMessage,
+              icon: 'none'
+            });
+          }
+        },
+        fail: (err) => {
+          console.error('获取社团详情失败:', err);
+          this.errorMessage = '网络请求失败，请检查网络连接';
+          uni.showToast({
+            title: this.errorMessage,
+            icon: 'none'
+          });
+        },
+        complete: () => {
+          this.loading = false;
+        }
+      });
     },
     
     // 检查会员状态
     checkMembership() {
-      // 检查baseUrl和userInfo是否存在
-      if (!this.baseUrl || !this.userInfo || !this.userInfo.userId) {
+      // 检查userInfo是否存在
+      if (!this.userInfo || !this.userInfo.userId) {
         return;
       }
       
-	  RequestCheckMembership(this.userInfo.userId,this.clubId).then((res)=>{
-		if (res.data.code === 200) {
-		  this.isMember = res.data.data;
-		}  
-	  }).catch((err)=>{
-		  console.error('检查成员状态失败:', err);
-	  })
+      uni.request({
+        url: `http://localhost:8080/happy/members/check`,
+        method: 'GET',
+        data: {
+          userId: this.userInfo.userId,
+          clubId: this.clubId
+        },
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.isMember = res.data.data;
+          }
+        },
+        fail: (err) => {
+          console.error('检查成员状态失败:', err);
+        }
+      });
     },
     
     // 格式化日期
@@ -265,30 +279,44 @@ export default {
             this.hasPendingRequest = true;
             
             uni.showLoading({ title: '提交中...' });
-			
-			RequestJoinClub(this.userInfo.userId,this.clubId,remark).then((res)=>{
-				if (res.data.code === 200 && res.data.data) {
-				  this.isMember = true;
-				  uni.showToast({
-				    title: '申请已提交，等待审核',
-				    icon: 'success'
-				  });
-				  this.loadClubDetail();
-				} else if(res.data.code === 500 && res.data.msg === '该用户已加入该社团') {
-				  uni.showToast({
-				    title: '您申请过此社团',
-				    icon: 'none'
-				  });
-				}
-			}).catch((err)=>{
-				uni.showToast({
-				  title: '网络错误',
-				  icon: 'none'
-				});
-			}).finally(()=>{
-				this.requesting = false;
-				uni.hideLoading();
-			})
+            
+            uni.request({
+              url: `http://localhost:8080/happy/members/join`,
+              method: 'POST',
+              header: {
+                'Content-Type': 'application/json'
+              },
+              data: {
+                userId: this.userInfo.userId,
+                clubId: this.clubId,
+                remark: remark
+              },
+              success: (res) => {
+                if (res.data.code === 200 && res.data.data) {
+                  this.isMember = true;
+                  uni.showToast({
+                    title: '申请已提交，等待审核',
+                    icon: 'success'
+                  });
+                  this.loadClubDetail();
+                } else if(res.data.code === 500 && res.data.msg === '该用户已加入该社团') {
+                  uni.showToast({
+                    title: '您申请过此社团',
+                    icon: 'none'
+                  });
+                }
+              },
+              fail: (err) => {
+                uni.showToast({
+                  title: '网络错误',
+                  icon: 'none'
+                });
+              },
+              complete: () => {
+                this.requesting = false;
+                uni.hideLoading();
+              }
+            });
           }
         }
       });
@@ -307,64 +335,43 @@ export default {
             this.hasPendingRequest = true;
             
             uni.showLoading({ title: '处理中...' });
-			
-			RequestQuitClub(this.userInfo.userId,this.clubId).then((res)=>{
-				if (res.data.code === 200 && res.data.data) {
-				  this.isMember = false;
-				  uni.showToast({
-				    title: '已成功退出社团',
-				    icon: 'success'
-				  });
-				  this.loadClubDetail();
-				} else {
-				  uni.showToast({
-				    title: '退出失败，请稍后重试',
-				    icon: 'none'
-				  });
-				}
-			}).catch(()=>{
-				uni.showToast({
-				  title: '网络错误',
-				  icon: 'none'
-				});
-			}).finally(()=>{
-				this.requesting = false;
-				uni.hideLoading();
-			})
-			
-            // uni.request({
-            //   url: `${this.baseUrl}/happy/members/quit`,
-            //   method: 'POST',
-            //   data: { 
-            //     userId: this.userInfo.userId,
-            //     clubId: this.clubId
-            //   },
-            //   success: (res) => {
-            //     if (res.data.code === 200 && res.data.data) {
-            //       this.isMember = false;
-            //       uni.showToast({
-            //         title: '已成功退出社团',
-            //         icon: 'success'
-            //       });
-            //       this.loadClubDetail();
-            //     } else {
-            //       uni.showToast({
-            //         title: '退出失败，请稍后重试',
-            //         icon: 'none'
-            //       });
-            //     }
-            //   },
-            //   fail: () => {
-            //     uni.showToast({
-            //       title: '网络错误',
-            //       icon: 'none'
-            //     });
-            //   },
-            //   complete: () => {
-            //     this.requesting = false;
-            //     uni.hideLoading();
-            //   }
-            // });
+            
+            uni.request({
+              url: `http://localhost:8080/happy/members/quit`,
+              method: 'POST',
+              header: {
+                'Content-Type': 'application/json'
+              },
+              data: { 
+                userId: this.userInfo.userId,
+                clubId: this.clubId
+              },
+              success: (res) => {
+                if (res.data.code === 200 && res.data.data) {
+                  this.isMember = false;
+                  uni.showToast({
+                    title: '已成功退出社团',
+                    icon: 'success'
+                  });
+                  this.loadClubDetail();
+                } else {
+                  uni.showToast({
+                    title: '退出失败，请稍后重试',
+                    icon: 'none'
+                  });
+                }
+              },
+              fail: () => {
+                uni.showToast({
+                  title: '网络错误',
+                  icon: 'none'
+                });
+              },
+              complete: () => {
+                this.requesting = false;
+                uni.hideLoading();
+              }
+            });
           }
         }
       });

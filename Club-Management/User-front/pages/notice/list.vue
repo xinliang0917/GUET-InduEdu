@@ -111,8 +111,7 @@
   </view>
 </template>
 
-<script>
-import {RequestNoticeList,RequestActivitiesList} from '../../api/notice/list.js'	
+<script>	
 
 export default {
   data() {
@@ -160,45 +159,58 @@ export default {
     
     getNoticeList() {
       this.loading = true;
-	  
-	  RequestNoticeList().then((res)=>{
-		if (res.data.code === 200) {
-		  this.noticeList = res.data.data;
-		} else {
-		  uni.showToast({
-		    title: '获取公告失败',
-		    icon: 'none'
-		  });
-		}  
-	  }).catch(()=>{
-		uni.showToast({
-		  title: '网络错误',
-		  icon: 'none'
-		});  
-	  }).finally(()=>{
-		this.loading = false;  
-	  })
+      
+      uni.request({
+        url: 'http://localhost:8080/happy/notices/public',
+        method: 'GET',
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.noticeList = res.data.data;
+          } else {
+            uni.showToast({
+              title: '获取公告失败',
+              icon: 'none'
+            });
+          }
+        },
+        fail: () => {
+          uni.showToast({
+            title: '网络错误',
+            icon: 'none'
+          });
+        },
+        complete: () => {
+          this.loading = false;
+        }
+      });
     },
     
     getActivityList() {
       this.loading = true;
-	  RequestActivitiesList().then((res)=>{
-		if (res.data.code === 200) {
-		  this.activityList = res.data.data;
-		} else {
-		  uni.showToast({
-		    title: '获取活动失败',
-		    icon: 'none'
-		  });
-		}  
-	  }).catch(()=>{
-		uni.showToast({
-		  title: '网络错误',
-		  icon: 'none'
-		});  
-	  }).finally(()=>{
-		this.loading = false;  
-	  })
+      
+      uni.request({
+        url: 'http://localhost:8080/happy/activities/public',
+        method: 'GET',
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.activityList = res.data.data;
+          } else {
+            uni.showToast({
+              title: '获取活动失败',
+              icon: 'none'
+            });
+          }
+        },
+        fail: () => {
+          uni.showToast({
+            title: '网络错误',
+            icon: 'none'
+          });
+        },
+        complete: () => {
+          this.loading = false;
+        }
+      });
     },
     
     goNoticeDetail(id) {

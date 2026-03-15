@@ -77,7 +77,6 @@
 <script>
 import { mapState } from 'vuex'
 import { mapMutations } from 'vuex'
-import {RequestUserInfo} from '../../api/center/center.js'
 import {baseUrl} from '../../api/request.js'
 
 export default {
@@ -105,23 +104,28 @@ export default {
         });
         return;
       }
-	  
-	  RequestUserInfo(userId).then((res)=>{
-		if (res.data.code === 200) {
-		  this.$store.commit('setUserInfo', res.data.data);
-		} else {
-		  uni.showToast({
-		    title: res.data.msg || '获取用户信息失败',
-		    icon: 'none'
-		  });
-		}  
-	  }).catch((err)=>{
-		console.error('获取用户信息失败:', err);
-		uni.showToast({
-		  title: '获取用户信息失败',
-		  icon: 'none'
-		});  
-	  })
+      
+      uni.request({
+        url: `http://localhost:8080/happy/user/detail/${userId}`,
+        method: 'GET',
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.$store.commit('setUserInfo', res.data.data);
+          } else {
+            uni.showToast({
+              title: res.data.msg || '获取用户信息失败',
+              icon: 'none'
+            });
+          }
+        },
+        fail: (err) => {
+          console.error('获取用户信息失败:', err);
+          uni.showToast({
+            title: '获取用户信息失败',
+            icon: 'none'
+          });
+        }
+      });
     },
 
     // 获取完整图片URL

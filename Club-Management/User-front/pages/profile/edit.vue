@@ -114,7 +114,6 @@
 
 <script>
 import { mapState } from 'vuex'
-import {RequestLoadDeptList,RequestUpdateUser} from '../../api/profile/edit.js'
 import {baseUrl} from '../../api/request.js'
 
 
@@ -160,42 +159,26 @@ export default {
     
     // 加载部门列表
     loadDeptList() {
-		
-		RequestLoadDeptList().then((res)=>{
-			if (res.data.code === 200) {
-			  this.deptList = res.data.data || [];
-			} else {
-			  uni.showToast({
-			    title: '获取部门列表失败',
-			    icon: 'none'
-			  });
-			}
-		}).catch(()=>{
-			uni.showToast({
-			  title: '网络错误，获取部门列表失败',
-			  icon: 'none'
-			});
-		})
-      // uni.request({
-      //   url: `${this.baseUrl}/happy/dept/list`,
-      //   method: 'GET',
-      //   success: (res) => {
-      //     if (res.data.code === 200) {
-      //       this.deptList = res.data.data || [];
-      //     } else {
-      //       uni.showToast({
-      //         title: '获取部门列表失败',
-      //         icon: 'none'
-      //       });
-      //     }
-      //   },
-      //   fail: () => {
-      //     uni.showToast({
-      //       title: '网络错误，获取部门列表失败',
-      //       icon: 'none'
-      //     });
-      //   }
-      // });
+      uni.request({
+        url: `http://localhost:8080/happy/dept/list`,
+        method: 'GET',
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.deptList = res.data.data || [];
+          } else {
+            uni.showToast({
+              title: '获取部门列表失败',
+              icon: 'none'
+            });
+          }
+        },
+        fail: () => {
+          uni.showToast({
+            title: '网络错误，获取部门列表失败',
+            icon: 'none'
+          });
+        }
+      });
     },
     
     // 选择部门
@@ -285,71 +268,43 @@ export default {
         title: '保存中...'
       });
       
-	  RequestUpdateUser(this.formData).then((res)=>{
-		if (res.data.code === 200) {
-		  // 更新Vuex中的用户信息
-		  this.$store.commit('setUserInfo', this.formData);
-		  
-		  uni.showToast({
-		    title: '修改成功',
-		    icon: 'success'
-		  });
-		  
-		  // 返回上一页
-		  setTimeout(() => {
-		    uni.navigateBack();
-		  }, 1500);
-		} else {
-		  uni.showToast({
-		    title: res.data.msg || '修改失败',
-		    icon: 'none'
-		  });
-		}  
-	  }).catch(()=>{
-		uni.showToast({
-		  title: '网络错误，修改失败',
-		  icon: 'none'
-		});  
-	  }).finally(()=>{
-		uni.hideLoading();  
-	  })
-	  
       // 提交表单数据
-      // uni.request({
-      //   url: `${this.baseUrl}/happy/user/update`,
-      //   method: 'POST',
-      //   data: this.formData,
-      //   success: (res) => {
-      //     if (res.data.code === 200) {
-      //       // 更新Vuex中的用户信息
-      //       this.$store.commit('setUserInfo', this.formData);
+      uni.request({
+        url: `http://localhost:8080/happy/user/update`,
+        method: 'POST',
+        header: { 'Content-Type': 'application/json' },
+        data: this.formData,
+        success: (res) => {
+          if (res.data.code === 200) {
+            // 更新Vuex中的用户信息
+            this.$store.commit('setUserInfo', this.formData);
             
-      //       uni.showToast({
-      //         title: '修改成功',
-      //         icon: 'success'
-      //       });
+            uni.showToast({
+              title: '修改成功',
+              icon: 'success'
+            });
             
-      //       // 返回上一页
-      //       setTimeout(() => {
-      //         uni.navigateBack();
-      //       }, 1500);
-      //     } else {
-      //       uni.showToast({
-      //         title: res.data.msg || '修改失败',
-      //         icon: 'none'
-      //       });
-      //     }
-      //   },
-      //   fail: () => {
-      //     uni.showToast({
-      //       title: '网络错误，修改失败',
-      //       icon: 'none'
-      //     });
-      //   },
-      //   complete: () => {
-      //     uni.hideLoading();
-      //   }
-      // });
+            // 返回上一页
+            setTimeout(() => {
+              uni.navigateBack();
+            }, 1500);
+          } else {
+            uni.showToast({
+              title: res.data.msg || '修改失败',
+              icon: 'none'
+            });
+          }
+        },
+        fail: () => {
+          uni.showToast({
+            title: '网络错误，修改失败',
+            icon: 'none'
+          });
+        },
+        complete: () => {
+          uni.hideLoading();
+        }
+      });
     }
   }
 }

@@ -65,7 +65,7 @@
 
       <!-- 空状态 -->
       <view class="empty-state" v-if="filteredClubs.length === 0">
-        <image src="/static/no-club.svg" class="empty-img" mode="aspectFit" />
+        <image src="/static/default-club.png" class="empty-img" mode="aspectFit" />
         <view class="mid"><text class="empty-title">暂无加入的社团</text></view>
         <view class="mid"><text class="empty-subtitle">去首页发现更多精彩社团</text></view>
       </view>
@@ -76,7 +76,6 @@
 <script>
 import { mapState } from 'vuex';
 import {baseUrl} from '../../api/request.js'
-import {RequestLoadClubsList} from '../../api/club/list.js'
 export default {
   data() {
     return {
@@ -114,27 +113,24 @@ export default {
     // 加载社团列表
     loadClubList() {
       this.isLoading = true;
-	  
-	  RequestLoadClubsList(this.userId).then((res=>{
-		if (res.data.code === 200) {
-		  this.clubList = res.data.data || [];
-		} else {
-		  uni.showToast({ title: '加载失败，请重试', icon: 'none' });
-		} 
-	  })).finally(()=>{
-		  this.isLoading = false
-	  })
-	  // uni.request({
-   //      url: `${this.baseUrl}/happy/clubs/${this.userId}`,
-   //      success: (res) => {
-   //        if (res.data.code === 200) {
-   //          this.clubList = res.data.data || [];
-   //        } else {
-   //          uni.showToast({ title: '加载失败，请重试', icon: 'none' });
-   //        }
-   //      },
-   //      complete: () => this.isLoading = false
-   //    });
+      
+      uni.request({
+        url: `http://localhost:8080/happy/clubs/${this.userId}`,
+        method: 'GET',
+        success: (res) => {
+          if (res.data.code === 200) {
+            this.clubList = res.data.data || [];
+          } else {
+            uni.showToast({ title: '加载失败，请重试', icon: 'none' });
+          }
+        },
+        fail: () => {
+          uni.showToast({ title: '网络错误，加载失败', icon: 'none' });
+        },
+        complete: () => {
+          this.isLoading = false;
+        }
+      });
     },
     // 格式化日期
     formatDate(timestamp) {
